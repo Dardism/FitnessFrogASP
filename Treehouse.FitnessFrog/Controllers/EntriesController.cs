@@ -53,6 +53,7 @@ namespace Treehouse.FitnessFrog.Controllers
       [HttpPost]
       public ActionResult Add(Entry entry) //POST version
       {
+
         //If there arn't any Duration field validation errors, then make sure that duration is > 0
         if (ModelState.IsValidField("Duration") && entry.Duration <= 0) 
         {
@@ -60,7 +61,7 @@ namespace Treehouse.FitnessFrog.Controllers
         }
 
 
-        if (ModelState.IsValid) 
+        if (ModelState.IsValid) //If the entry is valid, add it to the repo, redirec tto home 'index' page
         {
           _entriesRepository.AddEntry(entry);
 
