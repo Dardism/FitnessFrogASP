@@ -13,111 +13,124 @@ namespace Treehouse.FitnessFrog.Controllers
   {
     private EntriesRepository _entriesRepository = null;
 
-      public EntriesController()
-      {
-          _entriesRepository = new EntriesRepository();
-      }
+    public EntriesController()
+    {
+        _entriesRepository = new EntriesRepository();
+    }
 
-      public ActionResult Index()
-      {
-          List<Entry> entries = _entriesRepository.GetEntries();
+    public ActionResult Index()
+    {
+      List<Entry> entries = _entriesRepository.GetEntries();
 
-          // Calculate the total activity.
-          double totalActivity = entries
-              .Where(e => e.Exclude == false)
-              .Sum(e => e.Duration);
+      // Calculate the total activity.
+      double totalActivity = entries
+          .Where(e => e.Exclude == false)
+          .Sum(e => e.Duration);
 
-          // Determine the number of days that have entries.
-          int numberOfActiveDays = entries
-              .Select(e => e.Date)
-              .Distinct()
-              .Count();
+      // Determine the number of days that have entries.
+      int numberOfActiveDays = entries
+          .Select(e => e.Date)
+          .Distinct()
+          .Count();
 
-          ViewBag.TotalActivity = totalActivity;
-          ViewBag.AverageDailyActivity = (totalActivity / (double)numberOfActiveDays);
+      ViewBag.TotalActivity = totalActivity;
+      ViewBag.AverageDailyActivity = (totalActivity / (double)numberOfActiveDays);
 
-          return View(entries);
-      }
+      return View(entries);
+    }
 
-      public ActionResult Add() //GET version
-      {
+    public ActionResult Add() //GET version
+    {
       var entry = new Entry() {
-        Date = DateTime.Today,
-       };
+      Date = DateTime.Today,
+      };
 
-        ViewBag.ActivitiesSelectListItems = new SelectList(Data.Data.Activities, "Id", "Name");
+      ViewBag.ActivitiesSelectListItems = new SelectList(Data.Data.Activities, "Id", "Name");
 
-        return View(entry);
-      }
+      return View(entry);
+    }
 
-      [HttpPost]
-      public ActionResult Add(Entry entry) //POST version
+    [HttpPost]
+    public ActionResult Add(Entry entry) //POST version
+    {
+      ValidateEntry(entry);
+
+      if (ModelState.IsValid) //If the entry is valid, add it to the repo, redirec tto home 'index' page
       {
-        ValidateEntry(entry);
+        _entriesRepository.AddEntry(entry);
 
-        if (ModelState.IsValid) //If the entry is valid, add it to the repo, redirec tto home 'index' page
-        {
-          _entriesRepository.AddEntry(entry);
-
-          return RedirectToAction("Index");
-        }
-
-        ViewBag.ActivitiesSelectListItems = new SelectList(Data.Data.Activities, "Id", "Name");
-
-        return View(entry);
+        return RedirectToAction("Index");
       }
+
+      SetupActivitiesSelectListItems();
+
+      return View(entry);
+    }
 
     public ActionResult Edit(int? id)
+    {
+      if (id == null)
       {
-        if (id == null)
-        {
-            return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-        }
-
-        //TODO get the requested entry from the repo
-        Entry entry = _entriesRepository.GetEntry((int)id);
-
-        if (entry == null) 
-        {
-          return HttpNotFound();
-        }
-
-        //TODO pass entry into view
-
-        return View(entry);
+        return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
       }
 
-      [HttpPost]
-      public ActionResult Edit(Entry entry) 
+      //get the requested entry form the repository
+      Entry entry = _entriesRepository.GetEntry((int)id);
+
+      //return a status of not found if the entry wasnt found
+      if (entry == null) 
       {
-        //TODO validate entry
-        ValidateEntry(entry);
-        
-        //TODO if entry is valid
-          //1 use repo to update entry
-          //2 redirect user to list page
-
-        //populate 
-        
-        return View(entry);
+        return HttpNotFound();
       }
 
-      public ActionResult Delete(int? id)
+      //populate the activities select list items 
+      SetupActivitiesSelectListItems();
+
+      return View(entry);
+    }
+
+    [HttpPost]
+    public ActionResult Edit(Entry entry) 
+    {
+      //validate the entry
+      ValidateEntry(entry);
+
+      //if the entry is valid...
+      //1.use repo to update the entry
+      //2. redirect the user to the entries list page
+      if (ModelState.IsValid) 
       {
-          if (id == null)
-          {
-              return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-          }
-
-          return View();
+        _entriesRepository.UpdateEntry(entry);
+        return RedirectToAction("Index");
       }
 
 
-      private void ValidateEntry(Entry entry) {
-        //If there arn't any Duration field validation errors, then make sure that duration is > 0
-        if (ModelState.IsValidField("Duration") && entry.Duration <= 0) {
-          ModelState.AddModelError("Duration", "The Duration field value must be greater than '0'.");
-        }
+      //populate the activities select list items ViewBag property
+      SetupActivitiesSelectListItems();
+
+      return View(entry);
+    }
+
+    public ActionResult Delete(int? id)
+    {
+      if (id == null)
+      {
+          return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
       }
+
+      return View();
+    }
+
+    private void ValidateEntry(Entry entry) 
+    {
+      //If there arn't any Duration field validation errors, then make sure that duration is > 0
+      if (ModelState.IsValidField("Duration") && entry.Duration <= 0) {
+        ModelState.AddModelError("Duration", "The Duration field value must be greater than '0'.");
+      }
+    }
+
+    private void SetupActivitiesSelectListItems() {
+      ViewBag.ActivitiesSelectListItems = new SelectList(Data.Data.Activities, "Id", "Name");
+    }
   }
 }
