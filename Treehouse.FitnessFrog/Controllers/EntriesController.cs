@@ -53,13 +53,7 @@ namespace Treehouse.FitnessFrog.Controllers
       [HttpPost]
       public ActionResult Add(Entry entry) //POST version
       {
-
-        //If there arn't any Duration field validation errors, then make sure that duration is > 0
-        if (ModelState.IsValidField("Duration") && entry.Duration <= 0) 
-        {
-          ModelState.AddModelError("Duration", "The Duration field value must be greater than '0'.");
-        }
-
+        ValidateEntry(entry);
 
         if (ModelState.IsValid) //If the entry is valid, add it to the repo, redirec tto home 'index' page
         {
@@ -67,20 +61,45 @@ namespace Treehouse.FitnessFrog.Controllers
 
           return RedirectToAction("Index");
         }
-       
+
         ViewBag.ActivitiesSelectListItems = new SelectList(Data.Data.Activities, "Id", "Name");
 
         return View(entry);
       }
 
-      public ActionResult Edit(int? id)
+    public ActionResult Edit(int? id)
       {
-          if (id == null)
-          {
-              return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-          }
+        if (id == null)
+        {
+            return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+        }
 
-          return View();
+        //TODO get the requested entry from the repo
+        Entry entry = _entriesRepository.GetEntry((int)id);
+
+        if (entry == null) 
+        {
+          return HttpNotFound();
+        }
+
+        //TODO pass entry into view
+
+        return View(entry);
+      }
+
+      [HttpPost]
+      public ActionResult Edit(Entry entry) 
+      {
+        //TODO validate entry
+        ValidateEntry(entry);
+        
+        //TODO if entry is valid
+          //1 use repo to update entry
+          //2 redirect user to list page
+
+        //populate 
+        
+        return View(entry);
       }
 
       public ActionResult Delete(int? id)
@@ -91,6 +110,14 @@ namespace Treehouse.FitnessFrog.Controllers
           }
 
           return View();
+      }
+
+
+      private void ValidateEntry(Entry entry) {
+        //If there arn't any Duration field validation errors, then make sure that duration is > 0
+        if (ModelState.IsValidField("Duration") && entry.Duration <= 0) {
+          ModelState.AddModelError("Duration", "The Duration field value must be greater than '0'.");
+        }
       }
   }
 }
